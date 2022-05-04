@@ -66,7 +66,7 @@ Restart=always
 Type=simple
 RestartSec=10
 User=${USER}
-ExecStart=/usr/local/bin/server.py
+ExecStart=/usr/local/bin/server.py --privacy-mode-enabled=0
 [Install]
 WantedBy=multi-user.target
 EOF
