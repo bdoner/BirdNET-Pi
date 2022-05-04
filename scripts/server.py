@@ -1,4 +1,6 @@
-import socket 
+from ast import arg
+import socket
+from sys import argv 
 import threading
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -25,13 +27,14 @@ import pytz
 from tzlocal import get_localzone
 from pathlib import Path
 
-
+ARGV = argparse.Namespace()
 HEADER = 64
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DISCONNECT"
+PRIVACY_MODE_ENABLED = ARGV["privacy-mode-enabled"]==1
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 try:
@@ -48,6 +51,14 @@ with open(userDir + '/BirdNET-Pi/scripts/thisrun.txt', 'r') as f:
     this_run = f.readlines()
     audiofmt = "." + str(str(str([i for i in this_run if i.startswith('AUDIOFMT')]).split('=')[1]).split('\\')[0])
 
+def parseArgs():
+    global ARGV
+    parser = argparse.ArgumentParser(description="BirdNET-Pi analysis server")
+    parser.add_argument("--privacy-mode-enabled", 
+                        type=int, default=0,
+                        help="Enable or disable privacy mode")
+
+    ARGV = parser.parse_args()
 
 def loadModel():
 
@@ -74,8 +85,7 @@ def loadModel():
 
     # Load labels
     CLASSES = []
-    labelspath = userDir + '/BirdNET-Pi/model/labels.txt'
-    with open(labelspath, 'r') as lfile:
+    with open(userDir + '/BirdNET-Pi/model/labels.txt', 'r') as lfile:
         for line in lfile.readlines():
             CLASSES.append(line.replace('\n', ''))
 
@@ -167,11 +177,21 @@ def predict(sample, sensitivity):
 
     # Remove species that are on blacklist
     for i in range(min(10, len(p_sorted))):
+        if PRIVACY_MODE_ENABLED and p_sorted[i][0]=='Human_Human':
+            print("HUMAN SCORE:",str(p_sorted[i]))
+            with open(userDir + '/BirdNET-Pi/HUMAN.txt', 'a') as rfile:
+                rfile.write(str(datetime.datetime.now())+str(p_sorted[i])+ '\n')
+
         if p_sorted[i][0] in ['Human_Human', 'Non-bird_Non-bird', 'Noise_Noise']:
             p_sorted[i] = (p_sorted[i][0], 0.0)
 
-    # Only return first the top ten results
-    return p_sorted[:10]
+    # * Only return first the top ten results
+    # * In case of Privacy Mode being enabled, increase to 100
+    #   for more reliable human detection.
+    resultCount = 10
+    if PRIVACY_MODE_ENABLED:  
+        resultCount = 100
+    return p_sorted[:resultCount]
 
 def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap,):
     global INTERPRETER
@@ -194,9 +214,25 @@ def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap,):
         # Make prediction
         p = predict([sig, mdata], sensitivity)
 
+        if PRIVACY_MODE_ENABLED:
+            HUMAN_DETECTED=False
+            #Catch if Human is recognized
+            for x in range(len(p)):
+                if "Human" in p[x][0]:
+    #                print("HUMAN DETECTED!!",p[x][0])
+                    #clear list
+                    HUMAN_DETECTED=True
+                    print("CHUNK -----",c)
+
         # Save result and timestamp
         pred_end = pred_start + 3.0
+
+        if PRIVACY_MODE_ENABLED and HUMAN_DETECTED:
+            p=[('Human_Human',0.0)]*10
+            print("HUMAN DETECTED!!!",p)
+
         detections[str(pred_start) + ';' + str(pred_end)] = p
+
         pred_start = pred_end - overlap
 
     print('DONE! Time', int((time.time() - start) * 10) / 10.0, 'SECONDS')
@@ -274,7 +310,7 @@ def handle_client(conn, addr):
                         args.lon = float(inputvars[1])
 
 
-                   
+
                 # Load custom species lists - INCLUDED and EXCLUDED
                 if not args.include_list == 'null':
                     INCLUDE_LIST = loadCustomSpeciesList(args.include_list)
@@ -328,7 +364,7 @@ def handle_client(conn, addr):
                 # Write detections to Database
                 myReturn = ''
                 for i in detections:
-                  myReturn += str(i) + '-' + str(detections[i][0]) + '\n'
+                    myReturn += str(i) + '-' + str(detections[i][0]) + '\n'
                 
                 
                 with open(userDir + '/BirdNET-Pi/BirdDB.txt', 'a') as rfile:
@@ -418,11 +454,15 @@ def handle_client(conn, addr):
     conn.close() 
 
 def start():
+    #parse args - currenlty just to load privacy mode
+    parseArgs()
+
     # Load model
     global INTERPRETER, INCLUDE_LIST, EXCLUDE_LIST
     INTERPRETER = loadModel()
     server.listen()
     print(f"[LISTENING] Server is listening on {SERVER}")
+    print(f"[LISTENING] Privacy mode is " + ("*not* ", " ")[PRIVACY_MODE_ENABLED] + "enabled.")
     while True:
         conn, addr = server.accept()
         thread = threading.Thread(target=handle_client, args=(conn, addr))
