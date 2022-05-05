@@ -34,6 +34,7 @@ SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DISCONNECT"
+print(dir(ARGV))
 PRIVACY_MODE_ENABLED = ARGV["privacy-mode-enabled"]==1
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
