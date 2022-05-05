@@ -34,8 +34,7 @@ SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DISCONNECT"
-print(dir(ARGV))
-PRIVACY_MODE_ENABLED = ARGV["privacy-mode-enabled"]==1
+PRIVACY_MODE_ENABLED = False
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 try:
@@ -54,12 +53,15 @@ with open(userDir + '/BirdNET-Pi/scripts/thisrun.txt', 'r') as f:
 
 def parseArgs():
     global ARGV
+    global PRIVACY_MODE_ENABLED
     parser = argparse.ArgumentParser(description="BirdNET-Pi analysis server")
     parser.add_argument("--privacy-mode-enabled", 
-                        type=int, default=0,
+                        type=int, default=0, required=True,
                         help="Enable or disable privacy mode")
 
     ARGV = parser.parse_args()
+    print(dir(ARGV))
+    PRIVACY_MODE_ENABLED = ARGV.privacy_mode_enabled==1
 
 def loadModel():
 
