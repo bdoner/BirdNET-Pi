@@ -27,7 +27,6 @@ import pytz
 from tzlocal import get_localzone
 from pathlib import Path
 
-ARGV = {}
 HEADER = 64
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
@@ -50,18 +49,7 @@ userDir = os.path.expanduser('~')
 with open(userDir + '/BirdNET-Pi/scripts/thisrun.txt', 'r') as f:
     this_run = f.readlines()
     audiofmt = "." + str(str(str([i for i in this_run if i.startswith('AUDIOFMT')]).split('=')[1]).split('\\')[0])
-
-def parseArgs():
-    global ARGV
-    global PRIVACY_MODE_ENABLED
-    parser = argparse.ArgumentParser(description="BirdNET-Pi analysis server")
-    parser.add_argument("--privacy-mode-enabled", 
-                        type=int, default=0, required=True,
-                        help="Enable or disable privacy mode")
-
-    ARGV = parser.parse_args()
-    # print(dir(ARGV))
-    PRIVACY_MODE_ENABLED = ARGV.privacy_mode_enabled==1
+    PRIVACY_MODE_ENABLED = "on"==str(str([i for i in this_run if i.startswith('PRIVACY_MODE')]).split('=')[1]).split('\\')[0].strip()
 
 def loadModel():
 
@@ -457,9 +445,6 @@ def handle_client(conn, addr):
     conn.close() 
 
 def start():
-    #parse args - currenlty just to load privacy mode
-    parseArgs()
-
     # Load model
     global INTERPRETER, INCLUDE_LIST, EXCLUDE_LIST
     INTERPRETER = loadModel()
