@@ -27,7 +27,7 @@ import pytz
 from tzlocal import get_localzone
 from pathlib import Path
 
-ARGV = argparse.Namespace()
+ARGV = {}
 HEADER = 64
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
