@@ -60,7 +60,7 @@ def parseArgs():
                         help="Enable or disable privacy mode")
 
     ARGV = parser.parse_args()
-    print(dir(ARGV))
+    # print(dir(ARGV))
     PRIVACY_MODE_ENABLED = ARGV.privacy_mode_enabled==1
 
 def loadModel():
@@ -218,20 +218,20 @@ def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap,):
         p = predict([sig, mdata], sensitivity)
 
         if PRIVACY_MODE_ENABLED:
-            HUMAN_DETECTED=False
+            HUMAN_DETECTED = False
             #Catch if Human is recognized
             for x in range(len(p)):
                 if "Human" in p[x][0]:
     #                print("HUMAN DETECTED!!",p[x][0])
                     #clear list
-                    HUMAN_DETECTED=True
-                    print("CHUNK -----",c)
+                    HUMAN_DETECTED = True
+                    print("CHUNK -----", c)
 
         # Save result and timestamp
         pred_end = pred_start + 3.0
 
         if PRIVACY_MODE_ENABLED and HUMAN_DETECTED:
-            p=[('Human_Human',0.0)]*10
+            p = [('Human_Human',0.0)] * 10
             print("HUMAN DETECTED!!!",p)
 
         detections[str(pred_start) + ';' + str(pred_end)] = p
@@ -465,7 +465,7 @@ def start():
     INTERPRETER = loadModel()
     server.listen()
     print(f"[LISTENING] Server is listening on {SERVER}")
-    print(f"[LISTENING] Privacy mode is " + ("*not* ", " ")[PRIVACY_MODE_ENABLED] + "enabled.")
+    print(f"[LISTENING] Privacy mode is " + ("DISABLED", "ENABLED")[PRIVACY_MODE_ENABLED])
     while True:
         conn, addr = server.accept()
         thread = threading.Thread(target=handle_client, args=(conn, addr))
