@@ -92,7 +92,7 @@ if (!isset($_SERVER['PHP_AUTH_USER'])) {
         <?php 
         $avail_langs = [["labels_af.txt","Afrikaans"],["labels_ca.txt","Catalan"],["labels_cs.txt","Czech"],["labels_zh.txt","Chinese"],["labels_hr.txt","Croatian"],["labels_da.txt","Danish"],["labels_nl.txt","Dutch"],["labels_en.txt","English"],["labels_et.txt","Estonian"],["labels_fi.txt","Finnish"],["labels_fr.txt","French"],["labels_de.txt","German"],["labels_hu.txt","Hungarian"],["labels_is.txt","Icelandic"],["labels_id.txt","Indonesia"],["labels_it.txt","Italian"],["labels_ja.txt","Japanese"],["labels_lv.txt","Latvian"],["labels_lt.txt","Lithuania"],["labels_no.txt","Norwegian"],["labels_pl.txt","Polish"],["labels_pt.txt","Portugues"],["labels_ru.txt","Russian"],["labels_sk.txt","Slovak"],["labels_sl.txt","Slovenian"],["labels_es.txt","Spanish"],["labels_sv.txt","Swedish"],["labels_th.txt","Thai"],["labels_uk.txt","Ukrainian"]];
           foreach ($avail_langs as $lang) {
-            print('<option value="'.$lang[0].' '.($lang[0] === $language ? 'selected' : '').'">'.$lang[1].'</option>');
+            print('<option value="'.$lang[0].' '.($lang[0] === $xonfig["language"] ? 'selected' : '').'">'.$lang[1].'</option>');
           } 
         ?>
       </select>
