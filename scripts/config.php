@@ -2,42 +2,49 @@
 error_reporting(E_ALL);
 ini_set('display_errors',1);
 
+# Load existing config
+if (file_exists('./scripts/thisrun.txt')) {
+  $config = parse_ini_file('./scripts/thisrun.txt');
+} elseif (file_exists('./scripts/firstrun.ini')) {
+  $config = parse_ini_file('./scripts/firstrun.ini');
+} 
+
 # Basic Settings
 if(isset($_GET["latitude"])){
-$latitude = $_GET["latitude"];
-$longitude = $_GET["longitude"];
-$birdweather_id = $_GET["birdweather_id"];
-$pushed_app_key = $_GET["pushed_app_key"];
-$pushed_app_secret = $_GET["pushed_app_secret"];
+  $latitude = $_GET["latitude"];
+  $longitude = $_GET["longitude"];
+  $birdweather_id = $_GET["birdweather_id"];
+  $pushed_app_key = $_GET["pushed_app_key"];
+  $pushed_app_secret = $_GET["pushed_app_secret"];
 
-$contents = file_get_contents("/etc/birdnet/birdnet.conf");
-$contents = preg_replace("/LATITUDE=.*/", "LATITUDE=$latitude", $contents);
-$contents = preg_replace("/LONGITUDE=.*/", "LONGITUDE=$longitude", $contents);
-$contents = preg_replace("/BIRDWEATHER_ID=.*/", "BIRDWEATHER_ID=$birdweather_id", $contents);
-$contents = preg_replace("/PUSHED_APP_KEY=.*/", "PUSHED_APP_KEY=$pushed_app_key", $contents);
-$contents = preg_replace("/PUSHED_APP_SECRET=.*/", "PUSHED_APP_SECRET=$pushed_app_secret", $contents);
+  $contents = file_get_contents("/etc/birdnet/birdnet.conf");
+  $contents = preg_replace("/LATITUDE=.*/", "LATITUDE=$latitude", $contents);
+  $contents = preg_replace("/LONGITUDE=.*/", "LONGITUDE=$longitude", $contents);
+  $contents = preg_replace("/BIRDWEATHER_ID=.*/", "BIRDWEATHER_ID=$birdweather_id", $contents);
+  $contents = preg_replace("/PUSHED_APP_KEY=.*/", "PUSHED_APP_KEY=$pushed_app_key", $contents);
+  $contents = preg_replace("/PUSHED_APP_SECRET=.*/", "PUSHED_APP_SECRET=$pushed_app_secret", $contents);
 
-$contents2 = file_get_contents("./scripts/thisrun.txt");
-$contents2 = preg_replace("/LATITUDE=.*/", "LATITUDE=$latitude", $contents2);
-$contents2 = preg_replace("/LONGITUDE=.*/", "LONGITUDE=$longitude", $contents2);
-$contents2 = preg_replace("/BIRDWEATHER_ID=.*/", "BIRDWEATHER_ID=$birdweather_id", $contents2);
-$contents2 = preg_replace("/PUSHED_APP_KEY=.*/", "PUSHED_APP_KEY=$pushed_app_key", $contents2);
-$contents2 = preg_replace("/PUSHED_APP_SECRET=.*/", "PUSHED_APP_SECRET=$pushed_app_secret", $contents2);
+  $contents2 = file_get_contents("./scripts/thisrun.txt");
+  $contents2 = preg_replace("/LATITUDE=.*/", "LATITUDE=$latitude", $contents2);
+  $contents2 = preg_replace("/LONGITUDE=.*/", "LONGITUDE=$longitude", $contents2);
+  $contents2 = preg_replace("/BIRDWEATHER_ID=.*/", "BIRDWEATHER_ID=$birdweather_id", $contents2);
+  $contents2 = preg_replace("/PUSHED_APP_KEY=.*/", "PUSHED_APP_KEY=$pushed_app_key", $contents2);
+  $contents2 = preg_replace("/PUSHED_APP_SECRET=.*/", "PUSHED_APP_SECRET=$pushed_app_secret", $contents2);
 
-$fh = fopen("/etc/birdnet/birdnet.conf", "w");
-$fh2 = fopen("./scripts/thisrun.txt", "w");
-fwrite($fh, $contents);
-fwrite($fh2, $contents2);
+  $fh = fopen("/etc/birdnet/birdnet.conf", "w");
+  $fh2 = fopen("./scripts/thisrun.txt", "w");
+  fwrite($fh, $contents);
+  fwrite($fh2, $contents2);
 
-$language = $_GET["language"];
-if ($language != "none"){
-  $user = shell_exec("awk -F: '/1000/{print $1}' /etc/passwd");
-  $home = shell_exec("awk -F: '/1000/{print $6}' /etc/passwd");
-  $home = trim($home);
-  $command = "sudo -u".$user." mv ".$home."/BirdNET-Pi/model/labels.txt ".$home."/BirdNET-Pi/model/labels.txt.old && sudo -u".$user." unzip ".$home."/BirdNET-Pi/model/labels_l18n.zip ".$language." -d ".$home."/BirdNET-Pi/model && sudo -u".$user." mv ".$home."/BirdNET-Pi/model/".$language." ".$home."/BirdNET-Pi/model/labels.txt";
-  $command_output = `sudo $command`;
-  `sudo restart_services.sh`;
-}
+  $language = $_GET["language"];
+  if ($language != $config["language"]){
+    $user = shell_exec("awk -F: '/1000/{print $1}' /etc/passwd");
+    $home = shell_exec("awk -F: '/1000/{print $6}' /etc/passwd");
+    $home = trim($home);
+    $command = "sudo -u".$user." mv ".$home."/BirdNET-Pi/model/labels.txt ".$home."/BirdNET-Pi/model/labels.txt.old && sudo -u".$user." unzip ".$home."/BirdNET-Pi/model/labels_l18n.zip ".$language." -d ".$home."/BirdNET-Pi/model && sudo -u".$user." mv ".$home."/BirdNET-Pi/model/".$language." ".$home."/BirdNET-Pi/model/labels.txt";
+    $command_output = `sudo $command`;
+    `sudo restart_services.sh`;
+  }
 }
 
 ?>
@@ -49,11 +56,7 @@ if ($language != "none"){
       <h2>Basic Settings</h2>
     <form action="" method="GET">
 <?php 
-if (file_exists('./scripts/thisrun.txt')) {
-  $config = parse_ini_file('./scripts/thisrun.txt');
-} elseif (file_exists('./scripts/firstrun.ini')) {
-  $config = parse_ini_file('./scripts/firstrun.ini');
-} 
+
 $caddypwd = $config['CADDY_PWD'];
 if (!isset($_SERVER['PHP_AUTH_USER'])) {
   header('WWW-Authenticate: Basic realm="My Realm"');
@@ -86,36 +89,12 @@ if (!isset($_SERVER['PHP_AUTH_USER'])) {
       <p><a target="_blank" href="https://pushed.co/quick-start-guide">Pushed iOS Notifications</a> can be setup and enabled for New Species notifications. Be sure to "Enable" the "Pushed Notifications" in "Tools" > "Services" if you would like to use this feature. Sorry, Android users, this only works on iOS.</p>
       <label for="language">Database Language: </label>
       <select name="language">
-        <option value="none">Select your language</option>
-        <option value="labels_af.txt">Afrikaans</option>
-        <option value="labels_ca.txt">Catalan</option>
-        <option value="labels_cs.txt">Czech</option>
-        <option value="labels_zh.txt">Chinese</option>
-        <option value="labels_hr.txt">Croatian</option>
-        <option value="labels_da.txt">Danish</option>
-        <option value="labels_nl.txt">Dutch</option>
-        <option value="labels_en.txt">English</option>
-        <option value="labels_et.txt">Estonian</option>
-        <option value="labels_fi.txt">Finnish</option>
-        <option value="labels_fr.txt">French</option>
-        <option value="labels_de.txt">German</option>
-        <option value="labels_hu.txt">Hungarian</option>
-        <option value="labels_is.txt">Icelandic</option>
-        <option value="labels_id.txt">Indonesia</option>
-        <option value="labels_it.txt">Italian</option>
-        <option value="labels_ja.txt">Japanese</option>
-        <option value="labels_lv.txt">Latvian</option>
-        <option value="labels_lt.txt">Lithuania</option>
-        <option value="labels_no.txt">Norwegian</option>
-        <option value="labels_pl.txt">Polish</option>
-        <option value="labels_pt.txt">Portugues</option>
-        <option value="labels_ru.txt">Russian</option>
-        <option value="labels_sk.txt">Slovak</option>
-        <option value="labels_sl.txt">Slovenian</option>
-        <option value="labels_es.txt">Spanish</option>
-        <option value="labels_sv.txt">Swedish</option>
-        <option value="labels_th.txt">Thai</option>
-        <option value="labels_uk.txt">Ukrainian</option>
+        <?php 
+        $avail_langs = [["labels_af.txt","Afrikaans"],["labels_ca.txt","Catalan"],["labels_cs.txt","Czech"],["labels_zh.txt","Chinese"],["labels_hr.txt","Croatian"],["labels_da.txt","Danish"],["labels_nl.txt","Dutch"],["labels_en.txt","English"],["labels_et.txt","Estonian"],["labels_fi.txt","Finnish"],["labels_fr.txt","French"],["labels_de.txt","German"],["labels_hu.txt","Hungarian"],["labels_is.txt","Icelandic"],["labels_id.txt","Indonesia"],["labels_it.txt","Italian"],["labels_ja.txt","Japanese"],["labels_lv.txt","Latvian"],["labels_lt.txt","Lithuania"],["labels_no.txt","Norwegian"],["labels_pl.txt","Polish"],["labels_pt.txt","Portugues"],["labels_ru.txt","Russian"],["labels_sk.txt","Slovak"],["labels_sl.txt","Slovenian"],["labels_es.txt","Spanish"],["labels_sv.txt","Swedish"],["labels_th.txt","Thai"],["labels_uk.txt","Ukrainian"]];
+          foreach ($avail_langs as $lang) {
+            print('<option value="'.$lang[0].' '.($lang[0] === $language ? 'selected' : '').'">'.$lang[1].'</option>');
+          } 
+        ?>
       </select>
       <br><br>
       <input type="hidden" name="status" value="success">
